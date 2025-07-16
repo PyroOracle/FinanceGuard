@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Financial Advisor - Advanced</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: rgb(153, 7, 7);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100vh;
+        }
+
+        .container {
+            flex-grow: 1;
+            background-color: rgb(187, 174, 174);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 900px; /* Wider for more content */
+            box-sizing: border-box;
+            margin: 20px auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: black;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: black;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .section {
+            background-color: white;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .section.hidden {
+            display: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #00796b;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 121, 107, 0.3);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .radio-group, .checkbox-group {
+            margin-bottom: 15px;
+        }
+
+        .radio-group label, .checkbox-group label {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        .radio-group input[type="radio"], .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: rgb(118, 16, 212);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 20px;
+        }
+
+        .button:hover {
+            background-color: rgb(166, 113, 216);
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .category-selection {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .category-button {
+            flex: 1;
+            min-width: 150px;
+            background-color: rgb(243, 142, 142);
+            color: #00796b;
+            border: 2px solid #e2f7f3;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .category-button:hover {
+            background-color: rgb(170, 7, 7);
+            color: #ffffff;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .category-button.active {
+            background-color: rgb(170, 7, 7);
+            color: #ffffff;
+            border-color: rgb(126, 15, 230);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .response-section {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: #e8f5e9;
+            border-radius: 10px;
+            border: 1px solid #c8e6c9;
+        }
+
+        .response-section h2 {
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .response-section p {
+            line-height: 1.6;
+            color: #4CAF50;
+            font-size: 1.1em;
+            word-wrap: break-word; /* Ensure long words wrap */
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: rgb(96, 96, 235);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Specific input fields for each category */
+        #budgetingInputs, #investmentInputs, #retirementInputs, #taxInputs, #debtInputs,
+        #timeSeriesInputs, #portfolioInputs, #marketAnalysisInputs, #gptQueryInputs {
+            display: none;
+        }
+
+        /* Privacy/Consent Banner */
+        .consent-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 0.9em;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .consent-banner p {
+            margin: 0;
+            flex-grow: 1;
+            text-align: left;
+            max-width: 600px;
+        }
+
+        .consent-banner a {
+            color: #e0f2f1;
+            text-decoration: underline;
+            margin-left: 5px;
+        }
+
+        .consent-buttons button {
+            background-color: #00796b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background-color 0.2s ease;
+        }
+
+        .consent-buttons button:hover {
+            background-color: #004d40;
+        }
+
+        .consent-buttons button:last-child {
+            background-color: #e74c3c;
+        }
+        .consent-buttons button:last-child:hover {
+            background-color: #c0392b;
+        }
+
+        /* Footer for policy links */
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            font-size: 0.9em;
+            border-top: 1px solid #dee1e6;
+        }
+
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Specific styling for the data consent checkbox */
+        .data-consent-group {
+            margin-top: 25px;
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            background-color: #fdfdfd;
+        }
+
+        .data-consent-group label {
+            display: flex;
+            align-items: flex-start;
+            font-size: 0.95em;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .data-consent-group input[type="checkbox"] {
+            margin-top: 2px;
+            margin-right: 10px;
+            width: auto;
+        }
+
+        /* Data Input Method Selection */
+        .data-input-method {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .data-input-method button {
+            flex: 1;
+            background-color: #bbdefb;
+            color: #1976d2;
+            border: 2px solid #1565c0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .data-input-method button:hover {
+            background-color: #1565c0;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-input-method button.active {
+            background-color: #2196f3;
+            color: #ffffff;
+            border-color: #2196f3;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Specific Input Sections for Data Methods */
+        #manualEntrySection, #bankApiIntegrationSection, #fileUploadSection {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px dashed #a7d9d0;
+            border-radius: 8px;
+            background-color: #e0f8f5;
+        }
+
+        #bankApiIntegrationSection p, #fileUploadSection p {
+            font-style: italic;
+            color: #555;
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        #fileUploadSection .file-input-group {
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #f0fafa;
+        }
+
+        #fileUploadSection .file-input-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #fileUploadSection input[type="file"] {
+            width: auto;
+            padding: 5px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        /* Styling for time series data input */
+        .time-series-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .time-series-entry input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .time-series-entry button {
+            width: auto;
+            padding: 8px 12px;
+            margin-top: 0;
+            font-size: 0.9em;
+        }
+        #addTimeSeriesEntry {
+            background-color: #28a745;
+        }
+        #addTimeSeriesEntry:hover {
+            background-color: #218838;
+        }
+
+        /* Dashboard Specific Styles */
+        #dashboardSection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 100px;
+            margin-top: 20px;
+        }
+
+        .dashboard-card {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .dashboard-card h3 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Goal Progress Bars */
+        .goal-progress {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .goal-progress h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .goal-progress h4 span.amount {
+            font-size: 0.9em;
+            color: #00796b;
+            font-weight: normal;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            height: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4CAF50; /* Green */
+            width: 0%; /* Will be set by JS */
+            border-radius: 5px;
+            text-align: center;
+            color: white;
+            line-height: 20px;
+            font-size: 0.8em;
+            transition: width 0.5s ease-in-out;
+        }
+        .progress-bar.red { background-color: #e74c3c; } /* Red for debt */
+        .progress-bar.blue { background-color: #3498db; } /* Blue for savings */
+        .progress-bar.purple { background-color: #9b59b6; } /* Purple for investment */
+
+        /* Conversational Assistant Styles */
+        #conversationalAssistantSection {
+            background-color: #fcfcfc;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 500px; /* Fixed height for chat area */
+            margin-top: 20px;
+        }
+
+        #chatHistory {
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            background-color: #00796b;
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-message.ai {
+            align-self: flex-start;
+            background-color: #e0f2f1;
+            color: #333;
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        #chatInput {
+            flex-grow: 1;
+            margin-bottom: 0; /* Override default input margin */
+        }
+
+        #sendChatButton, #microphoneButton {
+            width: auto;
+            padding: 12px 18px;
+            margin-top: 0;
+            border-radius: 50%; /* Make them round */
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        #microphoneButton {
+            background-color: #3498db; /* Blue for microphone */
+        }
+
+        #microphoneButton.listening {
+            background-color: #e74c3c; /* Red when listening */
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+        }
+
+        /* Adjust button sizes for chat input */
+        .chat-input-area .button {
+            height: 48px; /* Consistent height with input */
+            width: 48px;
+            border-radius: 50%;
+            padding: 0; /* Remove padding as it's round */
+            margin-top: 0;
+        }
+        .chat-input-area .button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* --- Media Queries for Responsive Design --- */
+
+        /* For Phones (Smaller Screens) */
+        @media (max-width: 767px) {
+            .container {
+                padding: 15px 20px;
+                width: 95%;
+                margin: 10px auto;
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 20px;
+            }
+
+            h2 {
+                font-size: 1.4em;
+                margin-bottom: 15px;
+            }
+
+            .section {
+                padding: 15px;
+                margin-top: 15px;
+            }
+
+            .category-selection {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .category-button {
+                min-width: unset;
+                width: 100%;
+                font-size: 1em;
+                padding: 12px 15px;
+            }
+
+            .data-input-method {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .data-input-method button {
+                width: 100%;
+                font-size: 0.95em;
+                padding: 10px 12px;
+            }
+
+            input[type="number"],
+            input[type="text"],
+            input[type="date"],
+            select,
+            textarea {
+                padding: 10px;
+                font-size: 0.95em;
+                width: calc(100% - 20px); /* Adjust for padding */
+            }
+
+            .radio-group label, .checkbox-group label {
+                margin-right: 10px;
+                margin-bottom: 5px;
+                font-size: 0.9em;
+            }
+
+            .button {
+                padding: 12px;
+                font-size: 1em;
+            }
+
+            .consent-banner {
+                flex-direction: column;
+                padding: 10px 15px;
+                gap: 10px;
+            }
+
+            .consent-banner p {
+                text-align: center;
+                font-size: 0.85em;
+            }
+
+            .consent-buttons button {
+                margin-left: 5px;
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+
+            #dashboardSection {
+                grid-template-columns: 1fr; /* Stack cards vertically */
+                gap: 30px;
+            }
+
+            .dashboard-card {
+                padding: 15px;
+            }
+
+            .chart-container {
+                height: 250px; /* Adjust chart height for smaller screens */
+            }
+
+            #conversationalAssistantSection {
+                height: 400px; /* Adjust chat height for smaller screens */
+                padding: 15px;
+            }
+
+            .chat-message {
+                max-width: 90%;
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+
+            .chat-input-area {
+                flex-direction: row; /* Keep input and buttons in a row if space allows, otherwise wrap */
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            #chatInput {
+                width: calc(100% - 100px); /* Give some space for buttons */
+            }
+
+            .chat-input-area .button {
+                height: 40px;
+                width: 40px;
+                font-size: 1em;
+            }
+        }
+
+        /* For Smartwatches (Very Small Screens) */
+        @media (max-width: 400px) {
+            body {
+                font-size: 0.85em;
+            }
+
+            .container {
+                padding: 10px;
+                width: 100%;
+                margin: 5px auto;
+                border-radius: 0; /* No rounded corners for full screen on tiny devices */
+                box-shadow: none;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 15px;
+            }
+
+            h2 {
+                font-size: 1.2em;
+                margin-bottom: 10px;
+            }
+
+            .section {
+                padding: 10px;
+                margin-top: 10px;
+            }
+
+            .category-button,
+            .data-input-method button,
+            .button {
+                padding: 8px 10px;
+                font-size: 0.9em;
+                border-radius: 5px;
+            }
+
+            input[type="number"],
+            input[type="text"],
+            input[type="date"],
+            select,
+            textarea {
+                padding: 8px;
+                font-size: 0.9em;
+            }
+
+            .radio-group label, .checkbox-group label {
+                margin-right: 5px;
+                font-size: 0.85em;
+                display: block; /* Stack radio/checkbox labels vertically */
+            }
+
+            .consent-banner {
+                padding: 5px 10px;
+                font-size: 0.75em;
+                flex-direction: column; /* Ensure stacking */
+                gap: 5px;
+            }
+            .consent-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                width: 100%; /* Take full width */
+            }
+            .consent-buttons button {
+                width: 100%;
+                margin: 0; /* Remove horizontal margin */
+            }
+
+            .time-series-entry {
+                flex-direction: column; /* Stack date, amount, and remove button */
+                align-items: stretch;
+                gap: 5px;
+            }
+            .time-series-entry input {
+                width: 100%;
+            }
+            .time-series-entry button {
+                width: 100%; /* Make remove button full width */
+                padding: 5px;
+            }
+
+            #dashboardSection {
+                gap: 15px;
+            }
+
+            .chart-container {
+                height: 200px; /* Even smaller chart height */
+            }
+
+            #conversationalAssistantSection {
+                height: 300px; /* Even smaller chat height */
+                padding: 10px;
+            }
+
+            .chat-message {
+                max-width: 95%;
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+
+            .chat-input-area {
+                flex-wrap: wrap; /* Ensure wrapping if content overflows */
+                gap: 5px;
+            }
+            #chatInput {
+                width: calc(100% - 90px); /* Adjust to fit smaller buttons */
+            }
+            .chat-input-area .button {
+                height: 35px;
+                width: 35px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* For TVs (Larger Screens) */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1100px; /* Allow container to be even wider */
+                padding: 40px 60px;
+            }
+
+            h1 {
+                font-size: 2.8em;
+            }
+
+            h2 {
+                font-size: 1.8em;
+            }
+
+            .category-selection {
+                gap: 20px;
+            }
+
+            .category-button {
+                padding: 18px 25px;
+                font-size: 1.2em;
+            }
+
+            .button {
+                padding: 18px;
+                font-size: 1.3em;
+            }
+
+            #dashboardSection {
+                grid-template-columns: repeat(3, 1fr); /* Maybe 3 columns on large screens */
+                gap: 40px;
+            }
+
+            .chart-container {
+                height: 350px; /* Larger charts */
+            }
+
+            #conversationalAssistantSection {
+                height: 600px; /* Taller chat area */
+            }
+
+            .chat-message {
+                max-width: 70%; /* Allow messages to be a bit wider */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1><b><u>FinanceGuard ChatBot</u></b></h1>
+
+        <div id="userProfileSection" class="section">
+            <h2>Tell Us About Yourself...</h2>
+            <form id="userProfileForm">
+                <div>
+                    <label for="userType">Who are you?</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="userType" value="individual" required> Individual</label>
+                        <label><input type="radio" name="userType" value="freelancer"> Freelancer</label>
+                        <label><input type="radio" name="userType" value="smb"> SMB (Small/Medium Business)</label>
+                        <label><input type="radio" name="userType" value="family"> Family</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="currentAgeProfile">Your Current Age:</label>
+                    <input type="number" id="currentAgeProfile" name="currentAgeProfile" placeholder="e.g., 30" min="18" max="100" required>
+                </div>
+
+                <div>
+                    <label for="riskAppetite">What's your general risk appetite for investments?</label>
+                    <select id="riskAppetite" name="riskAppetite" required>
+                        <option value="">Select one</option>
+                        <option value="conservative">Conservative (Low Risk)</option>
+                        <option value="moderate">Moderate (Balanced Risk)</option>
+                        <option value="aggressive">Aggressive (High Risk)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="techSavvy">Are you tech-savvy?</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="techSavvy" value="yes" required> Yes</label>
+                        <label><input type="radio" name="techSavvy" value="no"> No</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="incomeLevel">What's your approximate annual income level?</label>
+                    <select id="incomeLevel" name="incomeLevel" required>
+                        <option value="">Select an income range</option>
+                        <option value="under_30k">Under Ksh30,000</option>
+                        <option value="30k_70k">Ksh30,000 - Ksh70,000</option>
+                        <option value="70k_150k">Ksh70,000 - Ksh150,000</option>
+                        <option value="over_150k">Over Ksh150,000</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>What are your main financial goals? (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="financialGoals" value="emergency_fund"> Emergency Fund</label><br>
+                        <label><input type="checkbox" name="financialGoals" value="buy_home"> A Home</label><br>
+                        <label><input type="checkbox" name="financialGoals" value="invest_growth"> Invest for Growth</label><br>
+                        <label><input type="checkbox" name="financialGoals" value="retire_early"> Early Retirement</label><br>
+                        <label><input type="checkbox" name="financialGoals" value="debt_reduction"> Debt Reduction</label><br>
+                        <label><input type="checkbox" name="financialGoals" value="child_education"> Child's Education</label><br>
+                        <label><input type="checkbox" name="financialGoals" value="start_business"> Start a Business</label><br>
+                        <label><input type="checkbox" name="financialGoals" value="other_goal"> Other</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="button">Continue to Advisor</button>
+            </form>
+        </div>
+
+        <div id="financialAdvisorSection" class="section hidden">
+            <h2>What kind of financial help do you need today?</h2>
+            <div class="category-selection">
+                <button class="category-button" data-category="dashboard">Dashboard</button>
+                <button class="category-button" data-category="conversational_assistant">Conversational Assistant</button> <button class="category-button" data-category="budgeting">Budgeting</button>
+                <button class="category-button" data-category="investment">Investment Advice</button>
+                <button class="category-button" data-category="retirement">Retirement Planning</button>
+                <button class="category-button" data-category="tax">Tax Planning</button>
+                <button class="category-button" data-category="debt">Debt Management</button>
+                <button class="category-button" data-category="time_series">Financial Predictions</button>
+                <button class="category-button" data-category="portfolio">Portfolio Management</button>
+                <button class="category-button" data-category="market_analysis">Market Trends</button>
+                <button class="category-button" data-category="gpt_query">Ask AI Anything</button>
+            </div>
+
+            <div id="inputSection" class="section hidden">
+                <h2>How would you like to provide your data for <span id="selectedCategoryName"></span>?</h2>
+                <div class="data-input-method">
+                    <button id="manualEntryBtn" data-method="manual">Manual Entry</button>
+                    <button id="bankApiBtn" data-method="bank_api">Bank/API Integration</button>
+                    <button id="fileUploadBtn" data-method="file_upload">File Upload</button>
+                </div>
+
+                <div id="manualEntrySection">
+                    <h3>Manual Data Entry</h3>
+                    <form id="financialForm">
+                        <div>
+                            <label for="income">Monthly Income (Ksh):</label>
+                            <input type="number" id="income" name="income" placeholder="e.g., 4000" required>
+                        </div>
+                        <div>
+                            <label for="liquidSavings">Liquid Savings (e.g., Checking/Savings, non-retirement):</label>
+                            <input type="number" id="liquidSavings" name="liquidSavings" placeholder="e.g., 5000">
+                        </div>
+                        <div>
+                            <label for="totalInvestments">Total Investments (non-retirement):</label>
+                            <input type="number" id="totalInvestments" name="totalInvestments" placeholder="e.g., 15000">
+                        </div>
+                        <div>
+                            <label for="totalDebts">Total Debt (non-mortgage):</label>
+                            <input type="number" id="totalDebts" name="totalDebts" placeholder="e.g., 10000">
+                        </div>
+
+
+                        <div id="budgetingInputs">
+                            <div>
+                                <label for="expenses">Monthly Expenses (Ksh):</label>
+                                <input type="number" id="expenses" name="expenses" placeholder="e.g., 3000">
+                            </div>
+                            <div>
+                                <label for="savingGoal">Saving Goal (Ksh):</label>
+                                <input type="number" id="savingGoal" name="savingGoal" placeholder="e.g., 500">
+                            </div>
+                        </div>
+
+                        <div id="investmentInputs">
+                            <div>
+                                <label for="investmentHorizon">Investment Horizon (Years):</label>
+                                <input type="number" id="investmentHorizon" name="investmentHorizon" placeholder="e.g., 10">
+                            </div>
+                            <div>
+                                <label for="initialInvestment">Initial Investment (Ksh):</label>
+                                <input type="number" id="initialInvestment" name="initialInvestment" placeholder="e.g., 10000">
+                            </div>
+                        </div>
+
+                        <div id="retirementInputs">
+                            <div>
+                                <label for="retirementAge">Desired Retirement Age:</label>
+                                <input type="number" id="retirementAge" name="retirementAge" placeholder="e.g., 65">
+                            </div>
+                            <div>
+                                <label for="currentSavings">Current Retirement Savings (Ksh):</label>
+                                <input type="number" id="currentSavings" name="currentSavings" placeholder="e.g., 50000">
+                            </div>
+                        </div>
+
+                        <div id="taxInputs">
+                            <div>
+                                <label for="taxableIncome">Annual Taxable Income (Ksh):</label>
+                                <input type="number" id="taxableIncome" name="taxableIncome" placeholder="e.g., 60000">
+                            </div>
+                            <div>
+                                <label for="dependents">Number of Dependents:</label>
+                                <input type="number" id="dependents" name="dependents" placeholder="e.g., 2">
+                            </div>
+                            <div>
+                                <label for="taxConcerns">Specific Tax Concerns (optional):</label>
+                                <textarea id="taxConcerns" name="taxConcerns" placeholder="e.g., Capital gains, self-employment taxes"></textarea>
+                            </div>
+                        </div>
+
+                        <div id="debtInputs">
+                            <div>
+                                <label for="totalDebt">Total Debt Amount (Ksh):</label>
+                                <input type="number" id="totalDebt" name="totalDebt" placeholder="e.g., 25000">
+                            </div>
+                            <div>
+                                <label for="debtType">Type of Debt:</label>
+                                <select id="debtType" name="debtType">
+                                    <option value="">Select one</option>
+                                    <option value="credit_card">Credit Card</option>
+                                    <option value="student_loan">Student Loan</option>
+                                    <option value="mortgage">Mortgage</option>
+                                    <option value="car_loan">Car Loan</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="interestRates">Average Interest Rate (%):</label>
+                                <input type="number" id="interestRates" name="interestRates" step="0.1" placeholder="e.g., 7.5">
+                            </div>
+                        </div>
+
+                        <div id="timeSeriesInputs">
+                            <h3>Historical Financial Data for Prediction</h3>
+                            <p>Provide at least 6-12 months of consistent data for better predictions. This simulates data that would be fed into ARIMA/LSTM models on the backend.</p>
+                            <label>Cash Flow History (Date, Amount):</label>
+                            <div id="cashFlowEntries">
+                                <div class="time-series-entry">
+                                    <input type="date" class="cashFlowDate" value="2024-01-01">
+                                    <input type="number" class="cashFlowAmount" placeholder="Cash Flow (e.g., 1000)" value="1000">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                                <div class="time-series-entry">
+                                    <input type="date" class="cashFlowDate" value="2024-02-01">
+                                    <input type="number" class="cashFlowAmount" value="1200">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                                <div class="time-series-entry">
+                                    <input type="date" class="cashFlowDate" value="2024-03-01">
+                                    <input type="number" class="cashFlowAmount" value="900">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                            </div>
+                            <button type="button" id="addCashFlowEntry" class="button" style="background-color: #28a745;">Add More Cash Flow</button>
+
+                            <label style="margin-top: 20px;">Expense History (Date, Amount):</label>
+                            <div id="expenseEntries">
+                                <div class="time-series-entry">
+                                    <input type="date" class="expenseDate" value="2024-01-01">
+                                    <input type="number" class="expenseAmount" placeholder="Expense (e.g., 800)" value="800">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                                <div class="time-series-entry">
+                                    <input type="date" class="expenseDate" value="2024-02-01">
+                                    <input type="number" class="expenseAmount" value="750">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                                <div class="time-series-entry">
+                                    <input type="date" class="expenseDate" value="2024-03-01">
+                                    <input type="number" class="expenseAmount" value="950">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                            </div>
+                            <button type="button" id="addExpenseEntry" class="button" style="background-color: #28a745;">Add More Expense</button>
+
+                            <label style="margin-top: 20px;">Net Worth History (Date, Amount):</label>
+                            <div id="netWorthEntries">
+                                <div class="time-series-entry">
+                                    <input type="date" class="netWorthDate" value="2024-01-01">
+                                    <input type="number" class="netWorthAmount" placeholder="Net Worth (e.g., 50000)" value="50000">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                                <div class="time-series-entry">
+                                    <input type="date" class="netWorthDate" value="2024-02-01">
+                                    <input type="number" class="netWorthAmount" value="51000">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                                <div class="time-series-entry">
+                                    <input type="date" class="netWorthDate" value="2024-03-01">
+                                    <input type="number" class="netWorthAmount" value="49500">
+                                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                                </div>
+                            </div>
+                            <button type="button" id="addNetWorthEntry" class="button" style="background-color: #28a745;">Add More Net Worth</button>
+                        </div>
+
+                        <div id="portfolioInputs">
+                            <h3>Portfolio Details</h3>
+                            <div>
+                                <label for="portfolioValue">Current Portfolio Value ($):</label>
+                                <input type="number" id="portfolioValue" name="portfolioValue" placeholder="e.g., 100000">
+                            </div>
+                            <div>
+                                <label for="assetAllocation">Asset Allocation (e.g., "Stocks: 60%, Bonds: 30%, Cash: 10%"):</label>
+                                <textarea id="assetAllocation" name="assetAllocation" placeholder="Describe your current asset allocation"></textarea>
+                            </div>
+                            <div>
+                                <label for="portfolioGoals">Portfolio Goals (e.g., "Max growth, income generation"):</label>
+                                <input type="text" id="portfolioGoals" name="portfolioGoals" placeholder="e.g., Long-term growth for retirement">
+                            </div>
+                        </div>
+
+                        <div id="marketAnalysisInputs">
+                            <h3>Market Analysis Preferences</h3>
+                            <div>
+                                <label for="marketTopic">Topic of Interest (e.g., "Tech stocks", "Real estate trends", "Inflation"):</label>
+                                <input type="text" id="marketTopic" name="marketTopic" placeholder="e.g., Impact of interest rates on housing market">
+                            </div>
+                            <div>
+                                <label for="timePeriod">Time Period (e.g., "Last 6 months", "Next quarter"):</label>
+                                <input type="text" id="timePeriod" name="timePeriod" placeholder="e.g., Short-term outlook (next 3 months)">
+                            </div>
+                        </div>
+
+                        <div id="gptQueryInputs">
+                            <h3>Ask AI Anything About Your Finances</h3>
+                            <div>
+                                <label for="gptQuery">Your Question:</label>
+                                <textarea id="gptQuery" name="gptQuery" placeholder="e.g., Should I pay off my mortgage early or invest?"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="data-consent-group">
+                            <label>
+                                <input type="checkbox" id="dataConsentCheckbox" required>
+                                I consent to share this data with the AI for analysis and advice. I understand this is for simulation purposes only and not real financial advice.
+                            </label>
+                        </div>
+
+                        <button type="submit" class="button" id="getAdviceButton" disabled>Get Advice</button>
+                    </form>
+                </div>
+
+                <div id="bankApiIntegrationSection">
+                    <h3>Bank/API Integration (Simulated)</h3>
+                    <p>This feature is for demonstration. In a real application, you would securely connect your bank accounts here via a third-party API like Plaid or Finicity.</p>
+                    <p>For now, please proceed with Manual Entry or File Upload to simulate data input.</p>
+                    <button class="button" disabled>Connect Bank Account (Simulated)</button>
+                </div>
+
+                <div id="fileUploadSection">
+                    <h3>File Upload (Simulated)</h3>
+                    <p>This feature is for demonstration. In a real application, you would upload financial statements (e.g., CSV, OFX, QFX) here.</p>
+                    <div class="file-input-group">
+                        <label for="bankStatementUpload">Upload Bank Statement (CSV/PDF):</label>
+                        <input type="file" id="bankStatementUpload" accept=".csv, .pdf">
+                    </div>
+                    <div class="file-input-group">
+                        <label for="investmentStatementUpload">Upload Investment Statement (CSV/PDF):</label>
+                        <input type="file" id="investmentStatementUpload" accept=".csv, .pdf">
+                    </div>
+                    <div class="file-input-group">
+                        <label for="taxDocumentUpload">Upload Tax Documents (PDF):</label>
+                        <input type="file" id="taxDocumentUpload" accept=".pdf">
+                    </div>
+                    <button class="button" disabled>Analyze Uploaded Files (Simulated)</button>
+                </div>
+            </div>
+
+            <div id="dashboardSection" class="section hidden">
+                <h2>Your Financial Dashboard</h2>
+                <div class="dashboard-card">
+                    <h3>Overall Net Worth</h3>
+                    <p style="font-size: 2em; color: #00796b;">Ksh<span id="dashboardNetWorth">0</span></p>
+                    <div class="chart-container">
+                        <canvas id="netWorthChart"></canvas>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Income vs. Expenses</h3>
+                    <p style="font-size: 1.5em; color: #00796b;">Monthly Surplus/Deficit: Ksh<span id="dashboardSurplusDeficit">0</span></p>
+                    <div class="chart-container">
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Financial Goals Progress</h3>
+                    <div id="goalProgressContainer">
+                        <div class="goal-progress">
+                            <h4>Emergency Fund <span class="amount">0%/0%</span></h4>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar blue" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="goal-progress">
+                            <h4>Debt Repayment <span class="amount">0%/0%</span></h4>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar red" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="goal-progress">
+                            <h4>Retirement Savings <span class="amount">0%/0%</span></h4>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar purple" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Investment Performance</h3>
+                    <p>Projected Growth: <span id="dashboardInvestmentGrowth" style="font-weight: bold;">0%</span></p>
+                    <div class="chart-container">
+                        <canvas id="investmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="conversationalAssistantSection" class="section hidden">
+                <h2>Conversational AI Assistant</h2>
+                <div id="chatHistory">
+                    <div class="chat-message ai">Hello! I'm your AI Financial Advisor. How can I assist you today? Feel free to ask me anything about your finances or use the microphone to speak.</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Type your message here...">
+                    <button class="button" id="sendChatButton" aria-label="Send Message">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M2.01 21.01L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
+                    </button>
+                    <button class="button" id="microphoneButton" aria-label="Start Voice Input">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3.93-3.07 7.1-7 7.1-3.93 0-7-3.17-7-7.1h-2c0 4.55 3.64 8.23 8 8.94V22h4v-2.06c4.36-.71 8-4.39 8-8.94h-2z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="responseSection" class="response-section hidden">
+                <h2>AI Financial Advice</h2>
+                <div class="loading-spinner"></div>
+                <p id="aiResponse"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="consent-banner" id="consentBanner">
+        <p>This site uses cookies to enhance user experience and analyze site traffic. By clicking "Accept", you agree to our use of cookies. <a href="#privacyPolicy">Learn More</a></p>
+        <div class="consent-buttons">
+            <button id="acceptConsent">Accept</button>
+            <button id="declineConsent">Decline</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 AI Financial Advisor. All rights reserved.</p>
+        <p>
+            <a href="#privacyPolicy">Privacy Policy</a> |
+            <a href="#termsOfService">Terms of Service</a> |
+            <a href="#disclaimer">Disclaimer</a>
+        </p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userProfileForm = document.getElementById('userProfileForm');
+            const financialAdvisorSection = document.getElementById('financialAdvisorSection');
+            const userProfileSection = document.getElementById('userProfileSection');
+            const categoryButtons = document.querySelectorAll('.category-button');
+            const inputSection = document.getElementById('inputSection');
+            const selectedCategoryName = document.getElementById('selectedCategoryName');
+            const financialForm = document.getElementById('financialForm');
+            const getAdviceButton = document.getElementById('getAdviceButton');
+            const responseSection = document.getElementById('responseSection');
+            const aiResponse = document.getElementById('aiResponse');
+            const loadingSpinner = document.querySelector('.loading-spinner');
+            const dataConsentCheckbox = document.getElementById('dataConsentCheckbox');
+
+            const manualEntryBtn = document.getElementById('manualEntryBtn');
+            const bankApiBtn = document.getElementById('bankApiBtn');
+            const fileUploadBtn = document.getElementById('fileUploadBtn');
+
+            const manualEntrySection = document.getElementById('manualEntrySection');
+            const bankApiIntegrationSection = document.getElementById('bankApiIntegrationSection');
+            const fileUploadSection = document.getElementById('fileUploadSection');
+
+            // Category-specific input divs
+            const budgetingInputs = document.getElementById('budgetingInputs');
+            const investmentInputs = document.getElementById('investmentInputs');
+            const retirementInputs = document.getElementById('retirementInputs');
+            const taxInputs = document.getElementById('taxInputs');
+            const debtInputs = document.getElementById('debtInputs');
+            const timeSeriesInputs = document.getElementById('timeSeriesInputs');
+            const portfolioInputs = document.getElementById('portfolioInputs');
+            const marketAnalysisInputs = document.getElementById('marketAnalysisInputs');
+            const gptQueryInputs = document.getElementById('gptQueryInputs');
+
+            // Dashboard elements
+            const dashboardSection = document.getElementById('dashboardSection');
+            const dashboardNetWorth = document.getElementById('dashboardNetWorth');
+            const dashboardSurplusDeficit = document.getElementById('dashboardSurplusDeficit');
+            const dashboardInvestmentGrowth = document.getElementById('dashboardInvestmentGrowth');
+            const netWorthChartCanvas = document.getElementById('netWorthChart');
+            const incomeExpenseChartCanvas = document.getElementById('incomeExpenseChart');
+            const investmentChartCanvas = document.getElementById('investmentChart');
+            const goalProgressContainer = document.getElementById('goalProgressContainer');
+
+            // Conversational Assistant elements
+            const conversationalAssistantSection = document.getElementById('conversationalAssistantSection');
+            const chatHistory = document.getElementById('chatHistory');
+            const chatInput = document.getElementById('chatInput');
+            const sendChatButton = document.getElementById('sendChatButton');
+            const microphoneButton = document.getElementById('microphoneButton');
+
+            // Time series entry buttons
+            const addCashFlowEntryButton = document.getElementById('addCashFlowEntry');
+            const addExpenseEntryButton = document.getElementById('addExpenseEntry');
+            const addNetWorthEntryButton = document.getElementById('addNetWorthEntry');
+            const cashFlowEntriesDiv = document.getElementById('cashFlowEntries');
+            const expenseEntriesDiv = document.getElementById('expenseEntries');
+            const netWorthEntriesDiv = document.getElementById('netWorthEntries');
+
+            let userProfileData = {};
+            let selectedCategory = '';
+            let currentDataMethod = ''; // To store 'manual', 'bank_api', or 'file_upload'
+
+            // Chart.js instances
+            let netWorthChart, incomeExpenseChart, investmentChart;
+
+            // Voice recognition
+            let recognition;
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = () => {
+                    microphoneButton.classList.add('listening');
+                    console.log('Voice recognition started...');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    chatInput.value = transcript;
+                    sendChatButton.click(); // Automatically send the message
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    microphoneButton.classList.remove('listening');
+                    alert('Speech recognition error: ' + event.error);
+                };
+
+                recognition.onend = () => {
+                    microphoneButton.classList.remove('listening');
+                    console.log('Voice recognition ended.');
+                };
+            } else {
+                microphoneButton.style.display = 'none'; // Hide if not supported
+                console.warn('Web Speech API not supported in this browser.');
+            }
+
+            microphoneButton.addEventListener('click', () => {
+                if (microphoneButton.classList.contains('listening')) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                }
+            });
+
+
+            // --- Consent Banner Logic ---
+            const consentBanner = document.getElementById('consentBanner');
+            const acceptConsentButton = document.getElementById('acceptConsent');
+            const declineConsentButton = document.getElementById('declineConsent');
+
+            // Check if consent has been given previously
+            if (localStorage.getItem('cookieConsent') === 'accepted') {
+                consentBanner.style.display = 'none';
+            }
+
+            acceptConsentButton.addEventListener('click', () => {
+                localStorage.setItem('cookieConsent', 'accepted');
+                consentBanner.style.display = 'none';
+            });
+
+            declineConsentButton.addEventListener('click', () => {
+                // You can choose to hide it or redirect, or show a limited version of the site
+                alert('You have declined cookies. Some features may be limited.');
+                consentBanner.style.display = 'none'; // Or keep it visible with a persistent message
+            });
+
+
+            // --- User Profile Form Submission ---
+            userProfileForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(userProfileForm);
+                userProfileData = Object.fromEntries(formData.entries());
+
+                // Get all selected financial goals
+                userProfileData.financialGoals = [];
+                document.querySelectorAll('input[name="financialGoals"]:checked').forEach(checkbox => {
+                    userProfileData.financialGoals.push(checkbox.value);
+                });
+
+                userProfileSection.classList.add('hidden');
+                financialAdvisorSection.classList.remove('hidden');
+                console.log('User Profile Data:', userProfileData);
+            });
+
+            // --- Category Selection ---
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove 'active' class from all category buttons
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add 'active' class to the clicked button
+                    button.classList.add('active');
+
+                    selectedCategory = button.dataset.category;
+                    selectedCategoryName.textContent = selectedCategory.replace('_', ' '); // Update the span text
+
+                    // Hide all input sections first
+                    budgetingInputs.classList.add('hidden');
+                    investmentInputs.classList.add('hidden');
+                    retirementInputs.classList.add('hidden');
+                    taxInputs.classList.add('hidden');
+                    debtInputs.classList.add('hidden');
+                    timeSeriesInputs.classList.add('hidden');
+                    portfolioInputs.classList.add('hidden');
+                    marketAnalysisInputs.classList.add('hidden');
+                    gptQueryInputs.classList.add('hidden');
+                    dashboardSection.classList.add('hidden');
+                    conversationalAssistantSection.classList.add('hidden');
+                    responseSection.classList.add('hidden'); // Also hide the response section when changing category
+
+                    // Show data input method selection
+                    inputSection.classList.remove('hidden');
+
+                    // Reset data input method active state
+                    manualEntryBtn.classList.remove('active');
+                    bankApiBtn.classList.remove('active');
+                    fileUploadBtn.classList.remove('active');
+                    manualEntrySection.style.display = 'none';
+                    bankApiIntegrationSection.style.display = 'none';
+                    fileUploadSection.style.display = 'none';
+
+                    // Special handling for Dashboard and Conversational Assistant
+                    if (selectedCategory === 'dashboard') {
+                        inputSection.classList.add('hidden');
+                        dashboardSection.classList.remove('hidden');
+                        displayDashboard(); // Call function to populate dashboard
+                    } else if (selectedCategory === 'conversational_assistant') {
+                        inputSection.classList.add('hidden');
+                        conversationalAssistantSection.classList.remove('hidden');
+                        // Clear chat history for a new session or keep it? Depends on UX.
+                        // chatHistory.innerHTML = '<div class="chat-message ai">Hello! I\'m your AI Financial Advisor. How can I assist you today?</div>';
+                    }
+                });
+            });
+
+            // --- Data Input Method Selection ---
+            const dataInputMethodButtons = document.querySelectorAll('.data-input-method button');
+            dataInputMethodButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    dataInputMethodButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    currentDataMethod = button.dataset.method;
+
+                    manualEntrySection.style.display = 'none';
+                    bankApiIntegrationSection.style.display = 'none';
+                    fileUploadSection.style.display = 'none';
+
+                    // Hide all category specific inputs first for manual entry
+                    budgetingInputs.style.display = 'none';
+                    investmentInputs.style.display = 'none';
+                    retirementInputs.style.display = 'none';
+                    taxInputs.style.display = 'none';
+                    debtInputs.style.display = 'none';
+                    timeSeriesInputs.style.display = 'none';
+                    portfolioInputs.style.display = 'none';
+                    marketAnalysisInputs.style.display = 'none';
+                    gptQueryInputs.style.display = 'none';
+
+                    if (currentDataMethod === 'manual') {
+                        manualEntrySection.style.display = 'block';
+                        // Show relevant input fields based on selected category
+                        switch (selectedCategory) {
+                            case 'budgeting':
+                                budgetingInputs.style.display = 'block';
+                                break;
+                            case 'investment':
+                                investmentInputs.style.display = 'block';
+                                break;
+                            case 'retirement':
+                                retirementInputs.style.display = 'block';
+                                break;
+                            case 'tax':
+                                taxInputs.style.display = 'block';
+                                break;
+                            case 'debt':
+                                debtInputs.style.display = 'block';
+                                break;
+                            case 'time_series':
+                                timeSeriesInputs.style.display = 'block';
+                                break;
+                            case 'portfolio':
+                                portfolioInputs.style.display = 'block';
+                                break;
+                            case 'market_analysis':
+                                marketAnalysisInputs.style.display = 'block';
+                                break;
+                            case 'gpt_query':
+                                gptQueryInputs.style.display = 'block';
+                                break;
+                        }
+                    } else if (currentDataMethod === 'bank_api') {
+                        bankApiIntegrationSection.style.display = 'block';
+                    } else if (currentDataMethod === 'file_upload') {
+                        fileUploadSection.style.display = 'block';
+                    }
+                    getAdviceButton.disabled = !dataConsentCheckbox.checked; // Re-evaluate button state
+                });
+            });
+
+            // --- Enable/Disable Get Advice Button based on consent ---
+            dataConsentCheckbox.addEventListener('change', () => {
+                getAdviceButton.disabled = !dataConsentCheckbox.checked;
+            });
+
+            // --- Financial Form Submission ---
+            financialForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                responseSection.classList.remove('hidden');
+                loadingSpinner.style.display = 'block';
+                aiResponse.textContent = ''; // Clear previous response
+
+                const formData = new FormData(financialForm);
+                const financialData = Object.fromEntries(formData.entries());
+
+                // Collect time series data specifically if that section is active
+                if (selectedCategory === 'time_series') {
+                    financialData.cashFlowHistory = Array.from(cashFlowEntriesDiv.children).map(entry => ({
+                        date: entry.querySelector('.cashFlowDate').value,
+                        amount: parseFloat(entry.querySelector('.cashFlowAmount').value)
+                    }));
+                    financialData.expenseHistory = Array.from(expenseEntriesDiv.children).map(entry => ({
+                        date: entry.querySelector('.expenseDate').value,
+                        amount: parseFloat(entry.querySelector('.expenseAmount').value)
+                    }));
+                    financialData.netWorthHistory = Array.from(netWorthEntriesDiv.children).map(entry => ({
+                        date: entry.querySelector('.netWorthDate').value,
+                        amount: parseFloat(entry.querySelector('.netWorthAmount').value)
+                    }));
+                }
+
+                console.log('Financial Data Submitted:', financialData);
+
+                // Simulate API call
+                setTimeout(() => {
+                    loadingSpinner.style.display = 'none';
+                    let advice = "Thank you for your input! Based on the information provided, here's some personalized financial advice:\n\n";
+
+                    switch (selectedCategory) {
+                        case 'budgeting':
+                            const income = parseFloat(financialData.income) || 0;
+                            const expenses = parseFloat(financialData.expenses) || 0;
+                            const savingGoal = parseFloat(financialData.savingGoal) || 0;
+                            const surplus = income - expenses;
+
+                            advice += `Your monthly income is $${income.toLocaleString()} and your expenses are $${expenses.toLocaleString()}. This leaves you with a surplus of $${surplus.toLocaleString()}.`;
+                            if (surplus >= savingGoal) {
+                                advice += ` You are on track to meet your saving goal of $${savingGoal.toLocaleString()}! Consider automating your savings to ensure consistency.`;
+                            } else {
+                                advice += ` Your current surplus is less than your saving goal of $${savingGoal.toLocaleString()}. To reach your goal, try to identify areas where you can reduce expenses or look for opportunities to increase income.`;
+                            }
+                            advice += ` A good rule of thumb is the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings/debt repayment.`;
+                            break;
+                        case 'investment':
+                            const investmentHorizon = parseInt(financialData.investmentHorizon) || 0;
+                            const initialInvestment = parseFloat(financialData.initialInvestment) || 0;
+                            const riskAppetite = userProfileData.riskAppetite;
+
+                            advice += `Given your investment horizon of ${investmentHorizon} years and an initial investment of $${initialInvestment.toLocaleString()}, and your ${riskAppetite} risk appetite, here are some considerations:\n\n`;
+                            if (riskAppetite === 'conservative') {
+                                advice += `- Focus on lower-risk assets like **bonds, GICs, and diversified index funds** with a high allocation to fixed income. Emphasis on capital preservation.\n`;
+                                advice += `- Consider a target-date fund that aligns with your retirement year if you prefer a hands-off approach.`;
+                            } else if (riskAppetite === 'moderate') {
+                                advice += `- A balanced portfolio of **50-70% stocks and 30-50% bonds/fixed income** is typically suitable. Diversify across different sectors and geographies.\n`;
+                                advice += `- Explore ETFs and mutual funds for broad market exposure.`;
+                            } else { // aggressive
+                                advice += `- You can consider a higher allocation to **equities (70-90% or more)**, including individual stocks and growth-oriented funds.\n`;
+                                advice += `- Explore emerging markets, small-cap stocks, and potentially alternative investments. Be prepared for higher volatility.`;
+                            }
+                            advice += ` Always diversify your portfolio and regularly rebalance to maintain your desired risk level.`;
+                            break;
+                        case 'retirement':
+                            const currentAge = parseInt(userProfileData.currentAgeProfile) || 0;
+                            const retirementAge = parseInt(financialData.retirementAge) || 0;
+                            const currentSavings = parseFloat(financialData.currentSavings) || 0;
+                            const yearsUntilRetirement = retirementAge - currentAge;
+
+                            if (yearsUntilRetirement > 0) {
+                                advice += `With ${yearsUntilRetirement} years until your desired retirement age of ${retirementAge} and current savings of $${currentSavings.toLocaleString()}, it's a great time to review your strategy.\n\n`;
+                                advice += `- Aim to consistently contribute to your retirement accounts (e.g., 401k, IRA, Roth IRA).\n`;
+                                advice += `- Consider increasing your contributions annually, especially if your income rises.\n`;
+                                advice += `- Take advantage of employer matching programs if available – it's free money!\n`;
+                                advice += `- Project your future expenses in retirement to set a realistic savings goal. Tools often suggest you'll need 70-80% of your pre-retirement income.`;
+                            } else {
+                                advice += `It seems you are at or past your desired retirement age. It's crucial to ensure your savings can sustain your lifestyle. Consider consulting with a human financial planner for detailed withdrawal strategies and income generation in retirement.`;
+                            }
+                            break;
+                        case 'tax':
+                            const taxableIncome = parseFloat(financialData.taxableIncome) || 0;
+                            const dependents = parseInt(financialData.dependents) || 0;
+                            const taxConcerns = financialData.taxConcerns;
+
+                            advice += `Based on your annual taxable income of $${taxableIncome.toLocaleString()} and ${dependents} dependents, here are some general tax planning tips:\n\n`;
+                            advice += `- Maximize contributions to tax-advantaged accounts like **401(k)s, IRAs, and HSAs** to reduce your taxable income.\n`;
+                            advice += `- Explore eligible deductions and credits. Dependents often qualify for child tax credits or other family-related deductions.\n`;
+                            if (taxConcerns) {
+                                advice += `- Regarding your concern about "${taxConcerns}", it's recommended to consult a tax professional or a certified public accountant (CPA) for specific advice tailored to your situation. Tax laws can be complex and vary based on individual circumstances.\n`;
+                            }
+                            advice += `- Keep meticulous records of all income and expenses for accurate tax filing.\n`;
+                            advice += `- Consider tax-loss harvesting if you have investments to offset capital gains.`;
+                            break;
+                        case 'debt':
+                            const totalDebt = parseFloat(financialData.totalDebt) || 0;
+                            const debtType = financialData.debtType;
+                            const interestRates = parseFloat(financialData.interestRates) || 0;
+
+                            advice += `For your total debt of $${totalDebt.toLocaleString()} (Type: ${debtType || 'Not specified'}, Interest Rate: ${interestRates}%):\n\n`;
+                            if (totalDebt > 0) {
+                                advice += `- **Prioritize high-interest debt** first (e.g., credit cards) using the "debt avalanche" method, or use the "debt snowball" method if you prefer small wins to stay motivated.\n`;
+                                advice += `- Consider **debt consolidation** if you have multiple high-interest debts, but be wary of associated fees and new interest rates.\n`;
+                                advice += `- Negotiate with creditors for lower interest rates or a payment plan, especially if you are facing hardship.\n`;
+                                advice += `- Create a detailed budget to free up more money for debt repayment.`;
+                            } else {
+                                advice += `It appears you have no major debts, which is excellent! Focus on building an emergency fund and increasing your investments.`;
+                            }
+                            break;
+                        case 'time_series':
+                            advice += `For financial predictions, I've analyzed your historical cash flow, expense, and net worth data.\n\n`;
+                            advice += `- **Cash Flow Trend:** Based on your inputs, your cash flow generally shows a [insert detected trend, e.g., "positive upward trend", "slight downward trend", "stable pattern"]. This suggests [implication, e.g., "growing income potential", "need to monitor income sources"].\n`;
+                            advice += `- **Expense Trend:** Your expenses appear to be [insert detected trend, e.g., "increasing steadily", "stable", "fluctuating"]. Managing expenses is key to improving financial health.\n`;
+                            advice += `- **Net Worth Trajectory:** Your net worth is moving [insert detected trend, e.g., "upwards", "downwards", "stagnant"]. Consistent savings and wise investments are crucial for long-term growth.\n\n`;
+                            advice += `**Prediction (Simulated):** Projecting forward, if current trends continue, your estimated net worth in the next 6-12 months could be [simulated value, e.g., "$XX,XXX"]. However, this is a simplified model. For more accurate predictions, continuous data input and advanced statistical modeling would be used. Focus on controlling variables within your influence, like increasing income or decreasing expenses.`;
+                            break;
+                        case 'portfolio':
+                            const portfolioValue = parseFloat(financialData.portfolioValue) || 0;
+                            const assetAllocation = financialData.assetAllocation;
+                            const portfolioGoals = financialData.portfolioGoals;
+
+                            advice += `Regarding your portfolio of $${portfolioValue.toLocaleString()} with asset allocation: "${assetAllocation}" and goals: "${portfolioGoals}":\n\n`;
+                            advice += `- Ensure your asset allocation aligns with your risk appetite (${userProfileData.riskAppetite}) and long-term goals. For example, if your goal is aggressive growth, your stock allocation should likely be higher.\n`;
+                            advice += `- **Diversification is key:** Do you have a mix of asset classes (stocks, bonds, real estate), geographies, and sectors? Over-concentration in one area can increase risk.\n`;
+                            advice += `- Regularly **rebalance** your portfolio to maintain your target allocation. Market fluctuations can cause your percentages to drift.\n`;
+                            advice += `- Consider the **tax efficiency** of your investments. Placing highly taxed assets in tax-advantaged accounts can be beneficial.\n`;
+                            advice += `- Review your portfolio's performance regularly and compare it to relevant benchmarks.`;
+                            break;
+                        case 'market_analysis':
+                            const marketTopic = financialData.marketTopic;
+                            const timePeriod = financialData.timePeriod;
+                            advice += `Here's a simulated market analysis based on your interest in "${marketTopic}" for the "${timePeriod}" time period:\n\n`;
+                            advice += `The market is currently experiencing [simulated market condition, e.g., "high volatility due to inflation concerns", "steady growth driven by tech innovation", "a period of consolidation"].\n`;
+                            if (marketTopic.toLowerCase().includes('interest rates')) {
+                                advice += `Specifically, regarding interest rates, the Federal Reserve's recent stances indicate [simulated impact, e.g., "potential for further rate hikes, which could impact bond yields and borrowing costs"].\n`;
+                            } else if (marketTopic.toLowerCase().includes('tech stocks')) {
+                                advice += `Tech stocks have seen [simulated performance, e.g., "significant gains/losses, with AI and cloud computing leading/lagging"]. Valuations remain a key consideration.\n`;
+                            }
+                            advice += `**Outlook:** For the ${timePeriod}, [simulated outlook, e.g., "analysts predict continued headwinds/tailwinds", "a cautious approach is advisable", "opportunities may emerge in oversold sectors"]. Always conduct your own research or consult a professional for real-time market insights.`;
+                            break;
+                        case 'gpt_query':
+                            const gptQuery = financialData.gptQuery;
+                            advice += `You asked: "${gptQuery}"\n\n`;
+                            advice += `Here's a thoughtful response from your AI financial advisor, considering your profile and data (simulated based on common financial wisdom):\n\n`;
+                            if (gptQuery.toLowerCase().includes('pay off mortgage') && gptQuery.toLowerCase().includes('invest')) {
+                                advice += `Deciding whether to pay off your mortgage early or invest depends on several factors, including your mortgage interest rate, potential investment returns, and your risk tolerance.\n`;
+                                advice += `**Arguments for paying off mortgage early:** Guaranteed return (your mortgage interest rate), reduced financial stress, increased cash flow once paid off. This is often appealing to those with a lower risk appetite.\n`;
+                                advice += `**Arguments for investing:** Potential for higher returns than your mortgage interest rate (especially with lower rates), liquidity, diversification. This might be more suitable if you have a moderate to aggressive risk appetite and your mortgage rate is low.\n`;
+                                advice += `**Recommendation:** If your mortgage interest rate is high (e.g., above 5-6%), consider prioritizing accelerated payments. If it's low, and you're comfortable with market risk, investing in a diversified portfolio (especially in tax-advantaged accounts) could yield greater long-term wealth. Always ensure you have a solid emergency fund before either.`;
+                            } else if (gptQuery.toLowerCase().includes('start saving')) {
+                                advice += `Starting to save is one of the most impactful financial decisions! Here are key steps:\n`;
+                                advice += `1. **Set Clear Goals:** What are you saving for? (e.g., emergency fund, down payment, retirement). Specific goals motivate you.\n`;
+                                advice += `2. **Create a Budget:** Understand your income and expenses. Find areas where you can cut back to free up money for savings.\n`;
+                                advice += `3. **Automate Savings:** Set up automatic transfers from your checking to your savings account each payday. "Pay yourself first!"\n`;
+                                advice += `4. **Build an Emergency Fund:** Aim for 3-6 months of essential living expenses in an easily accessible, high-yield savings account.\n`;
+                                advice += `5. **Start Small:** Even $25 or $50 a week/month makes a difference. Consistency is more important than the amount initially.\n`;
+                                advice += `6. **Increase Savings Over Time:** As your income grows, increase your savings rate.`;
+                            } else {
+                                advice += `That's an excellent question! While I can provide general guidance, for specific tailored advice based on advanced AI models, I would integrate with real-time financial data and sophisticated analytical capabilities. In this simulation, consider common financial principles related to your query. Generally, understanding your goals, current financial standing, and risk tolerance is key to making informed decisions.`;
+                            }
+                            break;
+                        default:
+                            advice += "Please select a specific financial category for tailored advice.";
+                    }
+                    aiResponse.textContent = advice;
+                }, 1500); // Simulate network delay
+            });
+
+            // --- Time Series Data Input Logic ---
+            function createTimeSeriesEntry(type, date = '', amount = '') {
+                const entryDiv = document.createElement('div');
+                entryDiv.classList.add('time-series-entry');
+                entryDiv.innerHTML = `
+                    <input type="date" class="${type}Date" value="${date}">
+                    <input type="number" class="${type}Amount" placeholder="${type.replace('cashFlow', 'Cash Flow').replace('netWorth', 'Net Worth').replace('expense', 'Expense')} (e.g., ${type === 'cashFlow' ? '1000' : type === 'expense' ? '800' : '50000'})" value="${amount}">
+                    <button type="button" class="removeEntry button" style="background-color: #e74c3c; width: auto;">-</button>
+                `;
+                entryDiv.querySelector('.removeEntry').addEventListener('click', () => {
+                    entryDiv.remove();
+                });
+                return entryDiv;
+            }
+
+            addCashFlowEntryButton.addEventListener('click', () => {
+                cashFlowEntriesDiv.appendChild(createTimeSeriesEntry('cashFlow', ''));
+            });
+            addExpenseEntryButton.addEventListener('click', () => {
+                expenseEntriesDiv.appendChild(createTimeSeriesEntry('expense', ''));
+            });
+            addNetWorthEntryButton.addEventListener('click', () => {
+                netWorthEntriesDiv.appendChild(createTimeSeriesEntry('netWorth', ''));
+            });
+
+            // Add event listeners to initial "remove" buttons for time series entries
+            document.querySelectorAll('.time-series-entry .removeEntry').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.target.closest('.time-series-entry').remove();
+                });
+            });
+
+            // --- Dashboard Display Logic ---
+            function displayDashboard() {
+                // Dummy data for charts - replace with actual calculated data
+                const income = parseFloat(document.getElementById('income').value) || 4000;
+                const expenses = parseFloat(document.getElementById('expenses').value) || 3000;
+                const liquidSavings = parseFloat(document.getElementById('liquidSavings').value) || 5000;
+                const totalInvestments = parseFloat(document.getElementById('totalInvestments').value) || 15000;
+                const totalDebts = parseFloat(document.getElementById('totalDebts').value) || 10000;
+                const currentRetirementSavings = parseFloat(document.getElementById('currentSavings').value) || 50000;
+                const savingGoal = parseFloat(document.getElementById('savingGoal').value) || 500;
+                const retirementAge = parseFloat(document.getElementById('retirementAge').value) || 65;
+                const currentAge = parseFloat(document.getElementById('currentAgeProfile').value) || 30;
+
+
+                const netWorth = (liquidSavings + totalInvestments + currentRetirementSavings) - totalDebts;
+                const monthlySurplus = income - expenses;
+
+                dashboardNetWorth.textContent = netWorth.toLocaleString();
+                dashboardSurplusDeficit.textContent = monthlySurplus.toLocaleString();
+                dashboardInvestmentGrowth.textContent = '12.5%'; // Placeholder
+
+                // Update Goal Progress Bars
+                goalProgressContainer.innerHTML = ''; // Clear previous
+                const goals = [
+                    { name: 'Emergency Fund', current: liquidSavings, target: savingGoal * 6, color: 'blue' }, // 6 months of saving goal
+                    { name: 'Debt Repayment', current: totalDebts > 0 ? (totalDebts - (totalDebts * 0.2)) : 0, target: totalDebts, color: 'red' }, // Assume 20% paid
+                    { name: 'Retirement Savings', current: currentRetirementSavings, target: 1000000, color: 'purple' } // A generic retirement goal
+                ];
+
+                goals.forEach(goal => {
+                    const progress = (goal.current / goal.target) * 100;
+                    const progressBarHTML = `
+                        <div class="goal-progress">
+                            <h4>${goal.name} <span class="amount">$${goal.current.toLocaleString()} / $${goal.target.toLocaleString()}</span></h4>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar ${goal.color}" style="width: ${Math.min(progress, 100)}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                    goalProgressContainer.insertAdjacentHTML('beforeend', progressBarHTML);
+                });
+
+
+                // Destroy existing charts before creating new ones
+                if (netWorthChart) netWorthChart.destroy();
+                if (incomeExpenseChart) incomeExpenseChart.destroy();
+                if (investmentChart) investmentChart.destroy();
+
+                // Net Worth Chart (Line Chart)
+                netWorthChart = new Chart(netWorthChartCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], // Dummy labels
+                        datasets: [{
+                            label: 'Net Worth',
+                            data: [45000, 47000, 48000, 50000, netWorth * 0.9, netWorth], // Dummy data ending with current netWorth
+                            borderColor: '#00796b',
+                            backgroundColor: 'rgba(0, 121, 107, 0.2)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Income vs. Expenses Chart (Bar Chart)
+                incomeExpenseChart = new Chart(incomeExpenseChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Income', 'Expenses', 'Surplus/Deficit'],
+                        datasets: [{
+                            label: 'Amount ($)',
+                            data: [income, expenses, monthlySurplus],
+                            backgroundColor: ['#4CAF50', '#e74c3c', monthlySurplus >= 0 ? '#3498db' : '#e74c3c'], // Green for income, Red for expenses, Blue/Red for surplus/deficit
+                            borderColor: ['#4CAF50', '#e74c3c', monthlySurplus >= 0 ? '#3498db' : '#e74c3c'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Investment Performance Chart (Doughnut Chart)
+                investmentChart = new Chart(investmentChartCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Stocks', 'Bonds', 'Real Estate', 'Other'], // Dummy allocation
+                        datasets: [{
+                            label: 'Asset Allocation',
+                            data: [60, 25, 10, 5], // Dummy percentages
+                            backgroundColor: ['#9b59b6', '#3498db', '#2ecc71', '#f1c40f'],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                    }
+                });
+            }
+
+            // --- Conversational Assistant Logic ---
+            sendChatButton.addEventListener('click', () => {
+                const userMessage = chatInput.value.trim();
+                if (userMessage) {
+                    appendMessage(userMessage, 'user');
+                    chatInput.value = '';
+                    simulateAiResponse(userMessage);
+                }
+            });
+
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChatButton.click();
+                }
+            });
+
+            function appendMessage(message, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('chat-message', sender);
+                messageDiv.textContent = message;
+                chatHistory.appendChild(messageDiv);
+                chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to bottom
+            }
+
+            function simulateAiResponse(userQuery) {
+                // Simple keyword-based responses for demonstration
+                let aiReply = "I'm still learning! Could you please try rephrasing? Or select a category to get specific advice.";
+
+                userQuery = userQuery.toLowerCase();
+
+                if (userQuery.includes('hello') || userQuery.includes('hi')) {
+                    aiReply = "Hello there! How can I assist you with your finances today?";
+                } else if (userQuery.includes('budget') || userQuery.includes('expenses') || userQuery.includes('income')) {
+                    aiReply = "Budgeting is a great place to start! To help you, I need your monthly income and expenses. You can input this via the 'Manual Entry' option under the Budgeting category.";
+                } else if (userQuery.includes('invest') || userQuery.includes('stocks') || userQuery.includes('portfolio')) {
+                    aiReply = "Investing can help grow your wealth. Tell me about your investment horizon and initial investment amount in the 'Investment Advice' section for tailored guidance.";
+                } else if (userQuery.includes('retirement')) {
+                    aiReply = "Planning for retirement is crucial. Please provide your desired retirement age and current retirement savings in the 'Retirement Planning' section.";
+                } else if (userQuery.includes('debt')) {
+                    aiReply = "Let's tackle that debt! I need details like your total debt amount, type of debt, and average interest rates. Find these fields under 'Debt Management'.";
+                } else if (userQuery.includes('tax')) {
+                    aiReply = "Tax planning can optimize your finances. Input your annual taxable income and number of dependents in the 'Tax Planning' section.";
+                } else if (userQuery.includes('thank you') || userQuery.includes('thanks')) {
+                    aiReply = "You're welcome! Is there anything else I can help you with?";
+                } else if (userQuery.includes('dashboard')) {
+                    aiReply = "You can view your financial overview on the Dashboard. Click on 'View Dashboard' to see your net worth, income vs. expenses, and goal progress.";
+                } else if (userQuery.includes('file upload')) {
+                     aiReply = "To upload files, please select the 'File Upload' option under your chosen category's data input method. Remember this is a simulated feature for demonstration.";
+                } else if (userQuery.includes('bank integration')) {
+                    aiReply = "For bank integration, click the 'Bank/API Integration' button. Please note that this is a simulated feature in this demo version for security reasons.";
+                }
+
+                setTimeout(() => {
+                    appendMessage(aiReply, 'ai');
+                }, 1000); // Simulate AI thinking time
+            }
+        });
+    </script>
+</body>
+</html>
